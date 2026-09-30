@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Периодическая система химических элементов</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(21, 30, 48, 0.65);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+
+            /* Неоновые цвета категорий */
+            --nonmetal: #38bdf8;
+            --noble-gas: #f59e0b;
+            --alkali-metal: #ef4444;
+            --alkaline-earth: #f97316;
+            --metalloid: #10b981;
+            --post-transition: #84cc16;
+            --transition-metal: #ec4899;
+            --halogen: #d946ef;
+            --lanthanide: #a855f7;
+            --actinide: #6366f1;
+            --unknown: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #1e293b 0%, var(--bg-color) 80%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Панель управления */
+        .controls {
+            width: 100%;
+            max-width: 1280px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 22px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Кнопки категорий */
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            max-width: 1100px;
+        }
+
+        .btn-filter {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(5px);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .btn-filter:hover, .btn-filter.active {
+            color: #0f172a;
+            background: #38bdf8;
+            border-color: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Контейнер таблицы */
+        .table-container {
+            width: 100%;
+            max-width: 1320px;
+            overflow-x: auto;
+            padding: 10px 0 20px 0;
+        }
+
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(60px, 1fr));
+            grid-template-rows: repeat(10, 64px);
+            gap: 6px;
+            min-width: 1150px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+        }
+
+        /* Карточка элемента */
+        .element {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 5px 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            user-select: none;
+        }
+
+        .element:hover {
+            transform: translateY(-5px) scale(1.12);
+            z-index: 30;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .element.dimmed {
+            opacity: 0.12;
+            filter: grayscale(90%);
+            transform: scale(0.95);
+        }
+
+        .element .num {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .element .symbol {
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .element .name {
+            font-size: 0.58rem;
+            text-align: center;
+            color: #cbd5e1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Подсветка категорий (Верхняя полоса) */
+        .nonmetal { border-top: 3px solid var(--nonmetal); }
+        .noble-gas { border-top: 3px solid var(--noble-gas); }
+        .alkali-metal { border-top: 3px solid var(--alkali-metal); }
+        .alkaline-earth { border-top: 3px solid var(--alkaline-earth); }
+        .metalloid { border-top: 3px solid var(--metalloid); }
+        .post-transition { border-top: 3px solid var(--post-transition); }
+        .transition-metal { border-top: 3px solid var(--transition-metal); }
+        .halogen { border-top: 3px solid var(--halogen); }
+        .lanthanide { border-top: 3px solid var(--lanthanide); }
+        .actinide { border-top: 3px solid var(--actinide); }
+        .unknown { border-top: 3px solid var(--unknown); }
+
+        /* Всплывающее окно (Modal) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 15, 25, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 440px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+            transform: scale(0.85);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover { color: #fff; }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .modal-badge {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        .modal-badge .m-num { font-size: 0.8rem; color: var(--text-muted); }
+        .modal-badge .m-sym { font-size: 2.2rem; font-weight: 800; }
+
+        .modal-title h2 { font-size: 1.6rem; color: #fff; }
+        .modal-title p { font-size: 0.9rem; color: #38bdf8; margin-top: 4px; font-weight: 600; }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+
+        .info-row span.label { color: var(--text-muted); }
+        .info-row span.val { font-weight: 600; color: #f8fafc; }
+
+        /* Мобильные устройства */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+            .filter-buttons { justify-content: flex-start; overflow-x: auto; padding-bottom: 8px; width: 100%; }
+            .btn-filter { flex-shrink: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Таблица Менделеева</h1>
+        <p class="subtitle">Интерактивный обучающий справочник химических элементов</p>
+    </header>
+
+    <div class="controls">
+        <!-- Поиск -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Поиск (например: Золото, Fe, 79)..." oninput="filterElements()">
+        </div>
+
+        <!-- Кнопки групп -->
+        <div class="filter-buttons" id="filterGroup">
+            <button class="btn-filter active" onclick="setGroup('all', this)">Все элементы</button>
+            <button class="btn-filter" onclick="setGroup('alkali-metal', this)">Щелочные</button>
+            <button class="btn-filter" onclick="setGroup('alkaline-earth', this)">Щелочноземельные</button>
+            <button class="btn-filter" onclick="setGroup('transition-metal', this)">Переходные</button>
+            <button class="btn-filter" onclick="setGroup('post-transition', this)">Постпереходные</button>
+            <button class="btn-filter" onclick="setGroup('metalloid', this)">Металлоиды</button>
+            <button class="btn-filter" onclick="setGroup('nonmetal', this)">Неметаллы</button>
+            <button class="btn-filter" onclick="setGroup('halogen', this)">Галогены</button>
+            <button class="btn-filter" onclick="setGroup('noble-gas', this)">Инертные газы</button>
+            <button class="btn-filter" onclick="setGroup('lanthanide', this)">Лантаноиды</button>
+            <button class="btn-filter" onclick="setGroup('actinide', this)">Актиноиды</button>
+        </div>
+    </div>
+
+    <!-- Таблица элементов -->
+    <div class="table-container">
+        <div class="periodic-table" id="table"></div>
+    </div>
+
+    <!-- Модальное окно -->
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal-card">
+            <button class="close-btn" onclick="forceCloseModal()">✕</button>
+            <div class="modal-header">
+                <div class="modal-badge" id="mBadge">
+                    <span class="m-num" id="mNum">1</span>
+                    <span class="m-sym" id="mSym">H</span>
+                </div>
+                <div class="modal-title">
+                    <h2 id="mName">Водород</h2>
+                    <p id="mCat">Неметалл</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="info-row"><span class="label">Атомный номер:</span><span class="val" id="mNumVal">1</span></div>
+                <div class="info-row"><span class="label">Атомная масса:</span><span class="val" id="mMass">1.008 а.е.м.</span></div>
+                <div class="info-row"><span class="label">Период:</span><span class="val" id="mPeriod">1</span></div>
+                <div class="info-row"><span class="label">Группа:</span><span class="val" id="mGroup">1</span></div>
+                <div class="info-row"><span class="label">Состояние (20°C):</span><span class="val" id="mState">Газ</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Данные всех 118 химических элементов
+        const elements = [
+            { num: 1, sym: "H", name: "Водород", mass: "1.008", cat: "nonmetal", catRu: "Неметалл", row: 1, col: 1, state: "Газ" },
+            { num: 2, sym: "He", name: "Гелий", mass: "4.0026", cat: "noble-gas", catRu: "Инертный газ", row: 1, col: 18, state: "Газ" },
+            { num: 3, sym: "Li", name: "Литий", mass: "6.94", cat: "alkali-metal", catRu: "Щелочной металл", row: 2, col: 1, state: "Твердое" },
+            { num: 4, sym: "Be", name: "Бериллий", mass: "9.0122", cat: "alkaline-earth", catRu: "Щелочноземельный", row: 2, col: 2, state: "Твердое" },
+            { num: 5, sym: "B", name: "Бор", mass: "10.81", cat: "metalloid", catRu: "Металлоид", row: 2, col: 13, state: "Твердое" },
+            { num: 6, sym: "C", name: "Углерод", mass: "12.011", cat: "nonmetal", catRu: "Неметалл", row: 2, col: 14, state: "Твердое" },
+            { num: 7, sym: "N", name: "Азот", mass: "14.007", cat: "nonmetal", catRu: "Неметалл", row: 2, col: 15, state: "Газ" },
+            { num: 8, sym: "O", name: "Кислород", mass: "15.999", cat: "nonmetal", catRu: "Неметалл", row: 2, col: 16, state: "Газ" },
+            { num: 9, sym: "F", name: "Фтор", mass: "18.998", cat: "halogen", catRu: "Галоген", row: 2, col: 17, state: "Газ" },
+            { num: 10, sym: "Ne", name: "Неон", mass: "20.180", cat: "noble-gas", catRu: "Инертный газ", row: 2, col: 18, state: "Газ" },
+
+            { num: 11, sym: "Na", name: "Натрий", mass: "22.990", cat: "alkali-metal", catRu: "Щелочной металл", row: 3, col: 1, state: "Твердое" },
+            { num: 12, sym: "Mg", name: "Магний", mass: "24.305", cat: "alkaline-earth", catRu: "Щелочноземельный", row: 3, col: 2, state: "Твердое" },
+            { num: 13, sym: "Al", name: "Алюминий", mass: "26.982", cat: "post-transition", catRu: "Постпереходный", row: 3, col: 13, state: "Твердое" },
+            { num: 14, sym: "Si", name: "Кремний", mass: "28.085", cat: "metalloid", catRu: "Металлоид", row: 3, col: 14, state: "Твердое" },
+            { num: 15, sym: "P", name: "Фосфор", mass: "30.974", cat: "nonmetal", catRu: "Неметалл", row: 3, col: 15, state: "Твердое" },
+            { num: 16, sym: "S", name: "Сера", mass: "32.06", cat: "nonmetal", catRu: "Неметалл", row: 3, col: 16, state: "Твердое" },
+            { num: 17, sym: "Cl", name: "Хлор", mass: "35.45", cat: "halogen", catRu: "Галоген", row: 3, col: 17, state: "Газ" },
+            { num: 18, sym: "Ar", name: "Аргон", mass: "39.948", cat: "noble-gas", catRu: "Инертный газ", row: 3, col: 18, state: "Газ" },
+
+            { num: 19, sym: "K", name: "Калий", mass: "39.098", cat: "alkali-metal", catRu: "Щелочной металл", row: 4, col: 1, state: "Твердое" },
+            { num: 20, sym: "Ca", name: "Кальций", mass: "40.078", cat: "alkaline-earth", catRu: "Щелочноземельный", row: 4, col: 2, state: "Твердое" },
+            { num: 21, sym: "Sc", name: "Скандий", mass: "44.956", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 3, state: "Твердое" },
+            { num: 22, sym: "Ti", name: "Титан", mass: "47.867", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 4, state: "Твердое" },
+            { num: 23, sym: "V", name: "Ванадий", mass: "50.942", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 5, state: "Твердое" },
+            { num: 24, sym: "Cr", name: "Хром", mass: "51.996", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 6, state: "Твердое" },
+            { num: 25, sym: "Mn", name: "Марганец", mass: "54.938", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 7, state: "Твердое" },
+            { num: 26, sym: "Fe", name: "Железо", mass: "55.845", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 8, state: "Твердое" },
+            { num: 27, sym: "Co", name: "Кобальт", mass: "58.933", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 9, state: "Твердое" },
+            { num: 28, sym: "Ni", name: "Никель", mass: "58.693", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 10, state: "Твердое" },
+            { num: 29, sym: "Cu", name: "Медь", mass: "63.546", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 11, state: "Твердое" },
+            { num: 30, sym: "Zn", name: "Цинк", mass: "65.38", cat: "transition-metal", catRu: "Переходный металл", row: 4, col: 12, state: "Твердое" },
+            { num: 31, sym: "Ga", name: "Галлий", mass: "69.723", cat: "post-transition", catRu: "Постпереходный", row: 4, col: 13, state: "Твердое" },
+            { num: 32, sym: "Ge", name: "Германий", mass: "72.630", cat: "metalloid", catRu: "Металлоид", row: 4, col: 14, state: "Твердое" },
+            { num: 33, sym: "As", name: "Мышьяк", mass: "74.922", cat: "metalloid", catRu: "Металлоид", row: 4, col: 15, state: "Твердое" },
+            { num: 34, sym: "Se", name: "Селен", mass: "78.971", cat: "nonmetal", catRu: "Неметалл", row: 4, col: 16, state: "Твердое" },
+            { num: 35, sym: "Br", name: "Бром", mass: "79.904", cat: "halogen", catRu: "Галоген", row: 4, col: 17, state: "Жидкое" },
+            { num: 36, sym: "Kr", name: "Криптон", mass: "83.798", cat: "noble-gas", catRu: "Инертный газ", row: 4, col: 18, state: "Газ" },
+
+            { num: 37, sym: "Rb", name: "Рубидий", mass: "85.468", cat: "alkali-metal", catRu: "Щелочной металл", row: 5, col: 1, state: "Твердое" },
+            { num: 38, sym: "Sr", name: "Стронций", mass: "87.62", cat: "alkaline-earth", catRu: "Щелочноземельный", row: 5, col: 2, state: "Твердое" },
+            { num: 39, sym: "Y", name: "Иттрий", mass: "88.906", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 3, state: "Твердое" },
+            { num: 40, sym: "Zr", name: "Цирконий", mass: "91.224", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 4, state: "Твердое" },
+            { num: 41, sym: "Nb", name: "Ниобий", mass: "92.906", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 5, state: "Твердое" },
+            { num: 42, sym: "Mo", name: "Молибден", mass: "95.95", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 6, state: "Твердое" },
+            { num: 43, sym: "Tc", name: "Технеций", mass: "[98]", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 7, state: "Искусственное" },
+            { num: 44, sym: "Ru", name: "Рутений", mass: "101.07", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 8, state: "Твердое" },
+            { num: 45, sym: "Rh", name: "Родий", mass: "102.91", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 9, state: "Твердое" },
+            { num: 46, sym: "Pd", name: "Палладий", mass: "106.42", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 10, state: "Твердое" },
+            { num: 47, sym: "Ag", name: "Серебро", mass: "107.87", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 11, state: "Твердое" },
+            { num: 48, sym: "Cd", name: "Кадмий", mass: "112.41", cat: "transition-metal", catRu: "Переходный металл", row: 5, col: 12, state: "Твердое" },
+            { num: 49, sym: "In", name: "Индий", mass: "114.82", cat: "post-transition", catRu: "Постпереходный", row: 5, col: 13, state: "Твердое" },
+            { num: 50, sym: "Sn", name: "Олово", mass: "118.71", cat: "post-transition", catRu: "Постпереходный", row: 5, col: 14, state: "Твердое" },
+            { num: 51, sym: "Sb", name: "Сурьма", mass: "121.76", cat: "metalloid", catRu: "Металлоид", row: 5, col: 15, state: "Твердое" },
+            { num: 52, sym: "Te", name: "Теллур", mass: "127.60", cat: "metalloid", catRu: "Металлоид", row: 5, col: 16, state: "Твердое" },
+            { num: 53, sym: "I", name: "Иод", mass: "126.90", cat: "halogen", catRu: "Галоген", row: 5, col: 17, state: "Твердое" },
+            { num: 54, sym: "Xe", name: "Ксенон", mass: "131.29", cat: "noble-gas", catRu: "Инертный газ", row: 5, col: 18, state: "Газ" },
+
+            { num: 55, sym: "Cs", name: "Цезий", mass: "132.91", cat: "alkali-metal", catRu: "Щелочной металл", row: 6, col: 1, state: "Твердое" },
+            { num: 56, sym: "Ba", name: "Барий", mass: "137.33", cat: "alkaline-earth", catRu: "Щелочноземельный", row: 6, col: 2, state: "Твердое" },
+            { num: 57, sym: "La-Lu", name: "*", mass: "---", cat: "lanthanide", catRu: "Лантаноиды", row: 6, col: 3, state: "---" },
+            { num: 72, sym: "Hf", name: "Гафний", mass: "178.49", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 4, state: "Твердое" },
+            { num: 73, sym: "Ta", name: "Тантал", mass: "180.95", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 5, state: "Твердое" },
+            { num: 74, sym: "W", name: "Вольфрам", mass: "183.84", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 6, state: "Твердое" },
+            { num: 75, sym: "Re", name: "Рений", mass: "186.21", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 7, state: "Твердое" },
+            { num: 76, sym: "Os", name: "Осмий", mass: "190.23", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 8, state: "Твердое" },
+            { num: 77, sym: "Ir", name: "Иридий", mass: "192.22", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 9, state: "Твердое" },
+            { num: 78, sym: "Pt", name: "Платина", mass: "195.08", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 10, state: "Твердое" },
+            { num: 79, sym: "Au", name: "Золото", mass: "196.97", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 11, state: "Твердое" },
+            { num: 80, sym: "Hg", name: "Ртуть", mass: "200.59", cat: "transition-metal", catRu: "Переходный металл", row: 6, col: 12, state: "Жидкое" },
+            { num: 81, sym: "Tl", name: "Таллий", mass: "204.38", cat: "post-transition", catRu: "Постпереходный", row: 6, col: 13, state: "Твердое" },
+            { num: 82, sym: "Pb", name: "Свинец", mass: "207.2", cat: "post-transition", catRu: "Постпереходный", row: 6, col: 14, state: "Твердое" },
+            { num: 83, sym: "Bi", name: "Висмут", mass: "208.98", cat: "post-transition", catRu: "Постпереходный", row: 6, col: 15, state: "Твердое" },
+            { num: 84, sym: "Po", name: "Полоний", mass: "[209]", cat: "post-transition", catRu: "Постпереходный", row: 6, col: 16, state: "Твердое" },
+            { num: 85, sym: "At", name: "Астат", mass: "[210]", cat: "halogen", catRu: "Галоген", row: 6, col: 17, state: "Твердое" },
+            { num: 86, sym: "Rn", name: "Радон", mass: "[222]", cat: "noble-gas", catRu: "Инертный газ", row: 6, col: 18, state: "Газ" },
+
+            { num: 87, sym: "Fr", name: "Франций", mass: "[223]", cat: "alkali-metal", catRu: "Щелочной металл", row: 7, col: 1, state: "Твердое" },
+            { num: 88, sym: "Ra", name: "Радий", mass: "[226]", cat: "alkaline-earth", catRu: "Щелочноземельный", row: 7, col: 2, state: "Твердое" },
+            { num: 89, sym: "Ac-Lr", name: "**", mass: "---", cat: "actinide", catRu: "Актиноиды", row: 7, col: 3, state: "---" },
+            { num: 104, sym: "Rf", name: "Резерфордий", mass: "[267]", cat: "transition-metal", catRu: "Переходный металл", row: 7, col: 4, state: "Искусственное" },
+            { num: 105, sym: "Db", name: "Дубний", mass: "[268]", cat: "transition-metal", catRu: "Переходный металл", row: 7, col: 5, state: "Искусственное" },
+            { num: 106, sym: "Sg", name: "Сиборгий", mass: "[269]", cat: "transition-metal", catRu: "Переходный металл", row: 7, col: 6, state: "Искусственное" },
+            { num: 107, sym: "Bh", name: "Борий", mass: "[270]", cat: "transition-metal", catRu: "Переходный металл", row: 7, col: 7, state: "Искусственное" },
+            { num: 108, sym: "Hs", name: "Хассий", mass: "[269]", cat: "transition-metal", catRu: "Переходный металл", row: 7, col: 8, state: "Искусственное" },
+            { num: 109, sym: "Mt", name: "Мейтнерий", mass: "[278]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 9, state: "Искусственное" },
+            { num: 110, sym: "Ds", name: "Дармштадтий", mass: "[281]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 10, state: "Искусственное" },
+            { num: 111, sym: "Rg", name: "Рентгений", mass: "[282]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 11, state: "Искусственное" },
+            { num: 112, sym: "Cn", name: "Коперниций", mass: "[285]", cat: "transition-metal", catRu: "Переходный металл", row: 7, col: 12, state: "Искусственное" },
+            { num: 113, sym: "Nh", name: "Нихоний", mass: "[286]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 13, state: "Искусственное" },
+            { num: 114, sym: "Fl", name: "Флеровий", mass: "[289]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 14, state: "Искусственное" },
+            { num: 115, sym: "Mc", name: "Московий", mass: "[290]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 15, state: "Искусственное" },
+            { num: 116, sym: "Lv", name: "Ливерморий", mass: "[293]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 16, state: "Искусственное" },
+            { num: 117, sym: "Ts", name: "Теннессин", mass: "[294]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 17, state: "Искусственное" },
+            { num: 118, sym: "Og", name: "Оганесон", mass: "[294]", cat: "unknown", catRu: "Неизвестно", row: 7, col: 18, state: "Искусственное" },
+
+            /* Лантаноиды */
+            { num: 57, sym: "La", name: "Лантан", mass: "138.91", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 4, state: "Твердое" },
+            { num: 58, sym: "Ce", name: "Церий", mass: "140.12", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 5, state: "Твердое" },
+            { num: 59, sym: "Pr", name: "Празеодим", mass: "140.91", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 6, state: "Твердое" },
+            { num: 60, sym: "Nd", name: "Неодим", mass: "144.24", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 7, state: "Твердое" },
+            { num: 61, sym: "Pm", name: "Прометий", mass: "[145]", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 8, state: "Искусственное" },
+            { num: 62, sym: "Sm", name: "Самарий", mass: "150.36", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 9, state: "Твердое" },
+            { num: 63, sym: "Eu", name: "Европий", mass: "151.96", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 10, state: "Твердое" },
+            { num: 64, sym: "Gd", name: "Гадолиний", mass: "157.25", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 11, state: "Твердое" },
+            { num: 65, sym: "Tb", name: "Тербий", mass: "158.93", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 12, state: "Твердое" },
+            { num: 66, sym: "Dy", name: "Диспрозий", mass: "162.50", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 13, state: "Твердое" },
+            { num: 67, sym: "Ho", name: "Гольмий", mass: "164.93", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 14, state: "Твердое" },
+            { num: 68, sym: "Er", name: "Эрбий", mass: "167.26", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 15, state: "Твердое" },
+            { num: 69, sym: "Tm", name: "Тулий", mass: "168.93", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 16, state: "Твердое" },
+            { num: 70, sym: "Yb", name: "Иттербий", mass: "173.05", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 17, state: "Твердое" },
+            { num: 71, sym: "Lu", name: "Лютеций", mass: "174.97", cat: "lanthanide", catRu: "Лантаноид", row: 9, col: 18, state: "Твердое" },
+
+            /* Актиноиды */
+            { num: 89, sym: "Ac", name: "Актиний", mass: "[227]", cat: "actinide", catRu: "Актиноид", row: 10, col: 4, state: "Твердое" },
+            { num: 90, sym: "Th", name: "Торий", mass: "232.04", cat: "actinide", catRu: "Актиноид", row: 10, col: 5, state: "Твердое" },
+            { num: 91, sym: "Pa", name: "Протактиний", mass: "231.04", cat: "actinide", catRu: "Актиноид", row: 10, col: 6, state: "Твердое" },
+            { num: 92, sym: "U", name: "Уран", mass: "238.03", cat: "actinide", catRu: "Актиноид", row: 10, col: 7, state: "Твердое" },
+            { num: 93, sym: "Np", name: "Нептуний", mass: "[237]", cat: "actinide", catRu: "Актиноид", row: 10, col: 8, state: "Искусственное" },
+            { num: 94, sym: "Pu", name: "Плутоний", mass: "[244]", cat: "actinide", catRu: "Актиноид", row: 10, col: 9, state: "Искусственное" },
+            { num: 95, sym: "Am", name: "Америций", mass: "[243]", cat: "actinide", catRu: "Актиноид", row: 10, col: 10, state: "Искусственное" },
+            { num: 96, sym: "Cm", name: "Кюрий", mass: "[247]", cat: "actinide", catRu: "Актиноид", row: 10, col: 11, state: "Искусственное" },
+            { num: 97, sym: "Bk", name: "Берклий", mass: "[247]", cat: "actinide", catRu: "Актиноид", row: 10, col: 12, state: "Искусственное" },
+            { num: 98, sym: "Cf", name: "Калифорний", mass: "[251]", cat: "actinide", catRu: "Актиноид", row: 10, col: 13, state: "Искусственное" },
+            { num: 99, sym: "Es", name: "Эйнштейний", mass: "[252]", cat: "actinide", catRu: "Актиноид", row: 10, col: 14, state: "Искусственное" },
+            { num: 100, sym: "Fm", name: "Фермий", mass: "[257]", cat: "actinide", catRu: "Актиноид", row: 10, col: 15, state: "Искусственное" },
+            { num: 101, sym: "Md", name: "Менделевий", mass: "[258]", cat: "actinide", catRu: "Актиноид", row: 10, col: 16, state: "Искусственное" },
+            { num: 102, sym: "No", name: "Нобелий", mass: "[259]", cat: "actinide", catRu: "Актиноид", row: 10, col: 17, state: "Искусственное" },
+            { num: 103, sym: "Lr", name: "Лоуренсий", mass: "[266]", cat: "actinide", catRu: "Актиноид", row: 10, col: 18, state: "Искусственное" }
+        ];
+
+        let selectedCategory = 'all';
+        const table = document.getElementById('table');
+
+        // Отрисовка элементов в сетке
+        function renderTable() {
+            table.innerHTML = '';
+            elements.forEach(el => {
+                const card = document.createElement('div');
+                card.className = `element ${el.cat}`;
+                card.style.gridRow = el.row;
+                card.style.gridColumn = el.col;
+                card.dataset.num = el.num;
+
+                card.innerHTML = `
+                    <span class="num">${el.num}</span>
+                    <span class="symbol">${el.sym}</span>
+                    <span class="name">${el.name}</span>
+                `;
+
+                if (el.mass !== "---") {
+                    card.onclick = () => openModal(el);
+                }
+                table.appendChild(card);
+            });
+        }
+
+        // Фильтрация по категориям
+        function setGroup(category, btn) {
+            selectedCategory = category;
+            
+            document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            filterElements();
+        }
+
+        // Фильтрация и поиск
+        function filterElements() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            document.querySelectorAll('.element').forEach(card => {
+                const num = card.dataset.num;
+                const elData = elements.find(e => e.num == num);
+
+                if (!elData) return;
+
+                const matchCategory = (selectedCategory === 'all' || elData.cat === selectedCategory);
+                const matchSearch = elData.name.toLowerCase().includes(query) || 
+                                    elData.sym.toLowerCase().includes(query) || 
+                                    elData.num.toString() === query;
+
+                if (matchCategory && matchSearch) {
+                    card.classList.remove('dimmed');
+                } else {
+                    card.classList.add('dimmed');
+                }
+            });
+        }
+
+        // Открытие карточки
+        function openModal(el) {
+            document.getElementById('mNum').innerText = el.num;
+            document.getElementById('mSym').innerText = el.sym;
+            document.getElementById('mName').innerText = el.name;
+            document.getElementById('mCat').innerText = el.catRu;
+            document.getElementById('mNumVal').innerText = el.num;
+            document.getElementById('mMass').innerText = el.mass + " а.е.м.";
+            
+            let period = el.row;
+            if (el.row === 9) period = 6;
+            if (el.row === 10) period = 7;
+            
+            document.getElementById('mPeriod').innerText = period;
+            document.getElementById('mGroup').innerText = el.col;
+            document.getElementById('mState').innerText = el.state;
+
+            const modal = document.getElementById('modal');
+            modal.classList.add('active');
+        }
+
+        function closeModal(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                document.getElementById('modal').classList.remove('active');
+            }
+        }
+
+        function forceCloseModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Запуск
+        renderTable();
+    </script>
+</body>
+</html>
